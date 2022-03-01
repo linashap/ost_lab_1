@@ -1,0 +1,82 @@
+
+//бгуир лабы для федосенко ост
+//клиент посылает серверу число от 0 до 10 и получает назад название этого числа прописью
+
+
+#include <locale.h>
+#include <iostream>
+#pragma comment (lib, "ws2_32.lib")
+#include <winsock2.h>
+#include <string>
+using namespace std;
+#pragma warning(disable:4996)
+int main(int args, char* argv[])
+{
+    setlocale(LC_ALL, "rus");
+    //WSAStartup
+    WSAData wsaData;                                              //содержит номер версии, которая должна использоваться (поле wVersion), максимальный номер версии, поддерживаемый данной библиотекой (поле wHighVersion), текстовые строки с описанием реализации WinSock, максимальное число сокетов, доступных процессу и максимально допустимый размер дейтаграмм.
+    WORD DLLVersion = MAKEWORD(2, 1);                            // версия интерфейса Winsock
+    if (WSAStartup(DLLVersion, &wsaData) != 0)                   // ПРОВЕРКА ЗАГРУЗКИ БИБЛИОТЕКИ 
+    {
+        std::cout << "eror" << std::endl;
+        exit(1);
+    }
+
+
+    SOCKADDR_IN addr;                                            // СТРУКТУРА ДЛЯ ИНТЕРНЕТ ПРОТОКОЛОВ 
+    int sizeofaddr = sizeof(addr);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");              // СТРУКТУРА КОТОРАЯ ХРАНИТ IP АДРЕС
+    addr.sin_port = htons(1111);                                // функции предназначены для изменения порядка следования байтов в параметрах порта и адреса, для преобразования их в общий сетевой формат для 16-разрядных и 32-разрядных значений соответственно.
+    addr.sin_family = AF_INET;                                  // СЕМЕЙСТВО ИНТЕРНЕТ ПРОТОКОЛОВ 
+
+    SOCKET  sListen = socket(AF_INET, SOCK_STREAM, NULL);       // ПРИВЯЗКА АДРЕСА СОКЕТУ // 1 домен
+    bind(sListen, (SOCKADDR*)&addr, sizeof(addr));              // bind связывает конкретный адрес с сокетом
+    listen(sListen, SOMAXCONN);                                 // ПРОСЛУШИВАНИЕ ПОРТА В ОЖИДАНИИ СОЕДИНЕНИЯ СО СТОРОНЫ КЛИЕНТА
+
+
+    SOCKET newConnection;                                                  // ОБЪЯВЛЯЕМ НОВЫЙ SOCKET ЧТОБЫ УДЕРЖИВАТЬ СОЕДИНЕНИЕ С КЛИЕНТОМ 
+    newConnection = accept(sListen, (SOCKADDR*)&addr, &sizeofaddr);        //  accept ВОЗВРАЩАЕТ дескриптор(то что возвращает функция сокет) НА НОВЫЙ SOCKET КОТОРЫЙ МОЖНО ИСПОЛЬЗОВАТЬ ДЛЯ ОБЩЕНИЯ С КЛИЕНТОМ
+
+    if (newConnection == 0)
+    {
+        std::cout << "eror #2\n";
+    }
+    else                                                                  // ПРОВЕРКА. СМОГ ЛИ КЛИЕНТ ПОДКЛЮЧИТСЯ К СЕРВЕРУ
+    {
+        std::cout << "Clien connect\n";
+    }
+
+    string a[] = { "Ноль","Один","Два" ,"Три","четыре","пять","шесть","семь","восемь","Девять","Десять" }; // ЗАПОЛНЯЕМ МАССИВ
+
+    char buf[255], b[255];
+
+    while (recv(newConnection, b, sizeof(b), 0) != 0)
+    {
+        cout << "Received message: " << b << "\n";
+        int n = atoi(b);                                                   // ПЕРЕВОЖУ ИЗ CHAR В INT
+
+        if (n == 999) {
+            cout << "Client disconnected\n";
+            break;
+        }
+
+        string bufbuf;
+        bufbuf = a[n];
+        strcpy(buf, bufbuf.c_str());
+
+
+        //Посылает данные на соединенный сокет
+        send(newConnection, buf, sizeof(buf), 0);
+        cout << "Sended message: " << buf << "\n";
+    }
+
+
+
+
+    system("pause");
+
+
+
+    return 0;
+
+}

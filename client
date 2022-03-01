@@ -1,0 +1,88 @@
+#include <locale.h>
+#include <iostream>
+#pragma comment (lib, "ws2_32.lib")
+#include <winsock2.h>
+#pragma warning(disable:4996)
+using namespace std;
+
+int main(int args, char* argv[])
+{
+    setlocale(LC_ALL, "rus");
+    //WSAStartup
+    WSAData wsaData;
+    WORD DLLVersion = MAKEWORD(2, 1);                              //значение типа word, которое определяет максимальный номер версии WinSock
+    if (WSAStartup(DLLVersion, &wsaData) != 0)
+    {
+        std::cout << "eror" << std::endl;                              // ПРОВЕРКА ЗАГРУЗКИ БИБЛИОТЕКИ 
+
+        exit(1);
+    }
+
+
+    SOCKADDR_IN addr;                                  //// СТРУКТУРА ДЛЯ ИНТЕРНЕТ ПРОТОКОЛОВ 
+    int sizeofaddr = sizeof(addr);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");         // СТРУКТУРА КОТОРАЯ ХРАНИТ IP АДРЕС
+    addr.sin_port = htons(1111);                          // функции предназначены для изменения порядка следования байтов в параметрах порта и адреса, для преобразования их в общий сетевой формат для 16-разрядных и 32-разрядных значений соответственно.
+    addr.sin_family = AF_INET;                            // СЕМЕЙСТВО ИНТЕРНЕТ ПРОТОКОЛОВ
+
+    SOCKET Connection = socket(AF_INET, SOCK_STREAM, NULL);               // SOCKET ДЛЯ СОЕДИНЕНИЯ С СЕРВЕРОМ
+    if (connect(Connection, (SOCKADDR*)&addr, sizeof(addr)) != 0)
+    {
+        std::cout << "eror : failed connect to server.\n";                // ПРОВЕРКА. СМОГ ЛИ КЛИЕНТ ПОДКЛЮЧИТСЯ К СЕРВЕРУ
+        return 1;
+    }
+    std::cout << "Connect!\n";
+
+
+    char b[255];
+
+
+    //char answer[256]; // строка для чтения
+
+    while (true)
+    {
+        int number;
+
+        cout << "Введите число от 1 до 10 (для выхода введите 999): ";
+        while (!(cin >> number) || cin.get() != '\n')         // ПОСИМВОЛЬНОЕ ЧТЕНИЕ С КЛАВИАТУРЫ 
+
+        {
+            cout << "Введите число!!!" << endl;
+            cin >> number;
+            cin.clear();                                        // очищаем поток ввода                              
+            cin.ignore(9999, '\n');                            // очищаем до 9999 символов из буфера или пока не будет удален символ '\n'
+        }
+
+        if (number == 999)
+        {
+            _itoa(number, b, 10);
+            send(Connection, b, sizeof(b), 0);             // Функция возвращает число записанных в сокет байтов // Первый аргумент - сокет-дескриптор, в который записываются данные. Второй и третий аргументы - соответственно, адрес и длина буфера с записываемыми данными. Четвертый параметр - это комбинация битовых флагов, управляющих режимами записи.
+            break;
+        }
+
+        else
+        {
+
+            while (number < 0 || number >10)
+            {
+                cout << "Необходимо ввести число от 1 до 10\n";
+                cout << "Введите число!!!" << endl;
+                cin >> number;
+            }
+        }
+
+
+        _itoa(number, b, 10);
+        send(Connection, b, sizeof(b), 0);
+
+        if (recv(Connection, b, sizeof(b), 0) != 0)
+        {
+            cout << b << endl;
+        }
+
+
+    }
+    closesocket(Connection);                        //завершение работы сокета(принимает дескриптор закрываемого сокета)
+    WSACleanup();
+    return 0;
+}
